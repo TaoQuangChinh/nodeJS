@@ -1,1 +1,2 @@
-mess6
+userName: chinh;
+passWord: 1234;
