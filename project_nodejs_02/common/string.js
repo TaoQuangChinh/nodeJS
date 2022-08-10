@@ -5,11 +5,17 @@ const email = 'chinhtao1908@gmail.com';
 const password = 'jcligjtgcjxfeqay';
 const subject = 'Mật khẩu đăng nhập';
 
-//config database
+//config error
+const jsonErr202= {
+    code: 202,
+    message: "yêu cầu của clinet đã được chấp thuận và đang trong thời gian xử lý.",
+    payload: null
+};
 
 module.exports = {
     contentEmail: contentEmail,
     email: email,
     password: password,
-    subject: subject
+    subject: subject,
+    jsonErr202: jsonErr202
 };
