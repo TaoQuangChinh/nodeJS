@@ -1,13 +1,13 @@
-const fs = require('fs');
-const string = require('./config/string');
+const string = require('./common/string');
 const nodemailer = require('./node_modules/nodemailer');
 const randomstring = require('./node_modules/randomstring');
+const config = require('./common/config');
 var db = require('./db/database');
 var body = [];
 
 //res: server phản hồi tới đối tượng(data server trả về cho đối tượng)
 //req: đối tượng phản hồi tới server(data đối tượng gửi lên server)
-const handleRequestListener = (req, res) => {
+config.app.use((req,res,next)=>{
     var url = req.url;
 
     req.on('data', (chunk) => {
@@ -44,7 +44,7 @@ const handleRequestListener = (req, res) => {
         }
         body = [];
     });
-};
+});
 
     const myEmail = nodemailer.createTransport({
         service: 'gmail',
