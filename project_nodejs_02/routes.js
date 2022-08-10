@@ -1,25 +1,9 @@
 const fs = require('fs');
+const string = require('./config/string');
 const nodemailer = require('./node_modules/nodemailer');
-const uuid = require('uuid');
+const randomstring = require('./node_modules/randomstring');
+var db = require('./db/database');
 var body = [];
-
-const myEmail = nodemailer.createTransport({
-    service: 'gmail',
-    auth:{
-        user: 'chinhtao1908@gmail.com',
-        pass: 'taoquangchinh1908'
-    }
-});
-
-const emailOption = (toMail,name) =>{
-    const random = uuid.v4().split('-');
-    return {
-        from: 'chinhtao1908@gmail.com',
-        to: toMail,
-        subject:'Mật khẩu mặc định',
-        text: `Xin chào ${name},\nChào mừng bạn đến với cờ caro.\nĐây là mật khẩu do chúng tôi cung cấp để truy cập vào game ${random[4]}.\nLưu ý: sau khi truy cập vào trò chơi, bạn đổi mật khẩu ở phần cài đặt`
-    };
-};
 
 //res: server phản hồi tới đối tượng(data server trả về cho đối tượng)
 //req: đối tượng phản hồi tới server(data đối tượng gửi lên server)
@@ -31,18 +15,30 @@ const handleRequestListener = (req, res) => {
     });
     return req.on('end', () => {
         const parsedBody = Buffer.concat(body).toString();
-        const { id, name, pass, name_game } = JSON.parse(parsedBody);
+        const { id, email, pass, name_game } = JSON.parse(parsedBody);
+
         if (url === '/login') {
-            const result =  dataRegister("",name,pass,"");
-            handleWriteFile('data_login.txt', JSON.stringify(result));
+            db.execute('SELECT * FROM user').then(data =>{
+                for(let arr of data[0]){
+                    if(arr['email'] === email && arr['pass'] === pass){
+                        console.log('success!!!');
+                    }else{
+                        console.log('fail!!!');
+                    }
+                }
+            }).catch(err =>{
+                console.log(err);
+            });
         } else if (url === '/register') {
-            const result =  dataRegister(id,name,pass,name_game);
-            handleWriteFile('data_register.txt', JSON.stringify(result));
-            myEmail.sendMail(emailOption(`${name}`,`${name_game}`),(err,info)=>{
+            const randomPass = randomstring.generate(7);
+            db.execute(`INSERT INTO user VALUES (?,?,?,?)`,[id,email,randomPass,name_game]).catch(err =>{
+                console.log(err);
+            });
+            myEmail.sendMail(emailOption(`${email}`,`${name_game}`,`${randomPass}`),(err,info)=>{
                 if(err){
-                    return console.log(err);
-                }else{
-                    
+                    res.statusCode = 404;
+                    res.write("404 Not Found");
+                    return res.end();
                 }
             });
         }
@@ -50,25 +46,22 @@ const handleRequestListener = (req, res) => {
     });
 };
 
-const dataRegister = (id,name,pass,nameGame) =>{
-    return {
-        id: id,
-        userName: name,
-        passWord: pass,
-        name_game: nameGame
-    };
-};
-
-const logText = 'Test log...';
-
-const handleWriteFile = (nameFile, dataFile) => fs.writeFile(nameFile, dataFile,
-    (err) => {
-        if (err) {
-            res.statusCode = 404;
-            res.write("404 Not Found");
-            return res.end();
+    const myEmail = nodemailer.createTransport({
+        service: 'gmail',
+        auth:{
+            user: string.email,
+            pass: string.password
         }
     });
+    
+    const emailOption = (toMail,name,random) =>{
+        return {
+            from: string.email,
+            to: toMail,
+            subject:string.subject,
+            text: string.contentEmail(name,random)
+        };
+    };    
 
 //Method 1
 // exports.handle = handleRequestListener;
@@ -76,6 +69,5 @@ const handleWriteFile = (nameFile, dataFile) => fs.writeFile(nameFile, dataFile,
 
 //Method 2
 module.exports = {
-    handle: handleRequestListener,
-    logs: logText
+    handle: handleRequestListener
 };

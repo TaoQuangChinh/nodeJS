@@ -1,2 +1,0 @@
-userName: chinh;
-passWord: 1234;

@@ -1,0 +1,23 @@
+{
+  "name": "project_nodejs_02",
+  "version": "1.0.0",
+  "description": "duAnCuaChinh",
+  "main": "app.js",
+  "directories": {
+    "example": "example"
+  },
+  "dependencies": {
+    "mysql2": "^2.3.3",
+    "nodemailer": "^6.7.7",
+    "randomstring": "^1.2.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app"
+  },
+  "author": "tao quang chinh",
+  "license": "ISC"
+}

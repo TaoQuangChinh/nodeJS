@@ -23,7 +23,8 @@ listAge.push(23,25);
 for(let device of listAge){
     console.log('device: '+user.checkDevice(device));
 }
-console.log(listAge.map(data => 'Age: '+data));
+
+console.log(listAge.map(data => data == 10));
 
 const copyAge = listAge.slice();
 console.log("copyAge: "+copyAge);
