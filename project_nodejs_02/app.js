@@ -15,19 +15,14 @@ apps.post("/login", (req, res) => {
     return req.on('end', () => {
         const parsedBody = Buffer.concat(body).toString();
         const { email, pass } = JSON.parse(parsedBody);
-        db.execute('SELECT * FROM user').then(data => {
+        db.execute('SELECT email, pass FROM user').then(data => {
             for (let arr of data[0]) {
                 if (arr['email'] === email && arr['pass'] === pass) {
                     res.statusCode = 200;
                     return res.json({
                         code: 0,
                         message: "đăng nhập thành công!",
-                        payload: {
-                            id: arr['id'],
-                            email: arr['email'],
-                            nick_name: arr['nameGame'],
-                            mobi_device: arr['mobiDevice']
-                        }
+                        payload: null
                     });
                 } else {
                     return res.json({
@@ -77,6 +72,34 @@ apps.post('/register', (req, res) => {
         });
         body = [];
     });
+});
+
+apps.get('/check-device', (req, res) => {
+    var user = {};
+    const { device_mobi } = req.query;
+    db.execute(`SELECT * FROM user`).then(data => {
+        for (let arr of data[0]) {
+            if (arr['deviceMobi'] === device_mobi) {
+                user = {
+                    id: arr['id'],
+                    email: arr['email'],
+                    nick_name: arr['nameGame'],
+                    mobi_device: arr['deviceMobi']
+                };
+            }
+            break;
+        }
+        res.statusCode = 200;
+        return res.json({
+            code: 0,
+            message: "kiểm tra device thành công!",
+            payload: user
+        });
+    }).catch(err => {
+        console.log(err);
+        return res.json(string.jsonErr202);
+    });
+    body = [];
 });
 
 const myEmail = nodemailer.createTransport({
