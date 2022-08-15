@@ -11,7 +11,7 @@ apps.use(bodyParser.json());
 
 apps.post("/login", (req, res) => {
     const { email, pass } = req.body;
-    db.execute('SELECT * FROM user WHERE email = ? AND pass = ?', [email, pass]).then(data => {
+    db.execute('SELECT email, pass FROM user WHERE email = ? AND pass = ?', [email, pass]).then(data => {
         if (data[0].length != 0) {
             res.statusCode = 200;
             return res.json({
@@ -35,27 +35,49 @@ apps.post("/login", (req, res) => {
 apps.post('/register', (req, res) => {
     const { id, email, nameGame, deviceMobi, images } = req.body;
     const randomPass = randomstring.generate(7);
-    console.log(images);
-    db.execute(`INSERT INTO user VALUES (?,?,?,?,?)`, [id, email, randomPass, nameGame, deviceMobi]).then(() => {
-        res.statusCode = 200;
-        return res.json({
-            code: 0,
-            message: "tạo tài khoản thành công!",
-            payload: null
-        });
+    console.log(email);
+    console.log(nameGame);
+    db.execute('SELECT email,nameGame FROM user WHERE email = ? OR nameGame = ?',[email,nameGame]).then(data => {
+        if(data[0].length != 0){
+            if (data[0][0]['email'] === email) {
+                return res.json({
+                    code: 501,
+                    message: 'Tài khoản email đã được đăng ký.',
+                    payload: null
+                });
+            } else if (data[0][0]['nameGame'] === nameGame) {
+                return res.json({
+                    code: 501,
+                    message: 'Nick name đã tồn tại, vui lòng chọn tên khác.',
+                    payload: null
+                });
+            }
+        }else{
+            db.execute(`INSERT INTO user VALUES (?,?,?,?,?,?)`, [id, email, randomPass, nameGame, deviceMobi, images]).then(() => {
+                res.statusCode = 200;
+                return res.json({
+                    code: 0,
+                    message: "tạo tài khoản thành công!",
+                    payload: null
+                });
+            }).catch(err => {
+                console.log(err);
+                return res.json(string.jsonErr202);
+            });
+            myEmail.sendMail(emailOption(`${email}`, `${nameGame}`, `${randomPass}`), (err, info) => {
+                if (err) {
+                    console.log(err);
+                    return res.json({
+                        code: 501,
+                        message: "có một lỗi xảy ra trong quá trình gửi mail.",
+                        payload: null
+                    });
+                }
+            });
+        }
     }).catch(err => {
         console.log(err);
         return res.json(string.jsonErr202);
-    });
-    myEmail.sendMail(emailOption(`${email}`, `${nameGame}`, `${randomPass}`), (err, info) => {
-        if (err) {
-            console.log(err);
-            return res.json({
-                code: 501,
-                message: "có một lỗi xảy ra trong quá trình gửi mail.",
-                payload: null
-            });
-        }
     });
 });
 
@@ -88,6 +110,7 @@ apps.get('/check-device', (req, res) => {
 
 apps.get('/list-account', (req, res) => {
     db.execute('SELECT * FROM user').then(data => {
+        console.log(data[0]);
         res.statusCode = 200;
         return res.json({
             code: 0,
@@ -117,5 +140,5 @@ const emailOption = (toMail, name, random) => {
     };
 };
 
-apps.listen(8000, '192.168.0.104');
+apps.listen(8000, '192.168.19.91');
 module.exports = apps;
