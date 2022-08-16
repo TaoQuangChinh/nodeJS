@@ -58,7 +58,7 @@ apps.post('/register', (req, res) => {
                 });
             }
         } else {
-            db.execute(`INSERT INTO user VALUES (?,?,?,?,?,?)`, [id, email, randomPass, nameGame, deviceMobi, images]).then(() => {
+            db.execute(`INSERT INTO user (id, email, pass, nameGame, deviceMobi, images) VALUES (?,?,?,?,?,?)`, [id, email, randomPass, nameGame, deviceMobi, images]).then(() => {
                 res.statusCode = 200;
                 return res.json({
                     code: 0,
@@ -154,5 +154,7 @@ const emailOption = (toMail, name, random) => {
     };
 };
 
-apps.listen(8000, '192.168.19.91');
+//192.168.19.91 (CT)
+//192.168.0.104 (LN)
+apps.listen(8000, '192.168.0.104');
 module.exports = apps;
