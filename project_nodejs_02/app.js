@@ -10,14 +10,19 @@ apps.use(bodyParser.urlencoded({ extended: true }));
 apps.use(bodyParser.json());
 
 apps.post("/login", (req, res) => {
-    const { email, pass } = req.body;
-    db.execute('SELECT email, pass FROM user WHERE email = ? AND pass = ?', [email, pass]).then(data => {
+    const { email, pass, save_acc } = req.body;
+    db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE email = ? AND pass = ?', [email, pass]).then(data => {
         if (data[0].length != 0) {
-            res.statusCode = 200;
-            return res.json({
-                code: 0,
-                message: "đăng nhập thành công!",
-                payload: null
+            db.execute('UPDATE user SET saveAccount = ? WHERE email = ?', [save_acc, email]).then(() => {
+                res.statusCode = 200;
+                return res.json({
+                    code: 0,
+                    message: "đăng nhập thành công!",
+                    payload: data[0][0]
+                });
+            }).catch(err => {
+                console.log(err);
+                return res.json(string.jsonErr202);
             });
         } else {
             return res.json({
@@ -37,8 +42,8 @@ apps.post('/register', (req, res) => {
     const randomPass = randomstring.generate(7);
     console.log(email);
     console.log(nameGame);
-    db.execute('SELECT email,nameGame FROM user WHERE email = ? OR nameGame = ?',[email,nameGame]).then(data => {
-        if(data[0].length != 0){
+    db.execute('SELECT email,nameGame FROM user WHERE email = ? OR nameGame = ?', [email, nameGame]).then(data => {
+        if (data[0].length != 0) {
             if (data[0][0]['email'] === email) {
                 return res.json({
                     code: 501,
@@ -52,7 +57,7 @@ apps.post('/register', (req, res) => {
                     payload: null
                 });
             }
-        }else{
+        } else {
             db.execute(`INSERT INTO user VALUES (?,?,?,?,?,?)`, [id, email, randomPass, nameGame, deviceMobi, images]).then(() => {
                 res.statusCode = 200;
                 return res.json({
@@ -81,20 +86,30 @@ apps.post('/register', (req, res) => {
     });
 });
 
+apps.post('/change-pass', (req, res) => {
+    const { email, pass_confirm } = req.body;
+    console.log(email,pass_confirm);
+    db.execute('UPDATE user SET pass = ? WHERE email = ?', [pass_confirm, email]).then(() => {
+        res.statusCode = 200;
+        return res.json({
+            code: 0,
+            message: "cập nhập thông tin thành công!",
+            payload: null
+        });
+    }).catch(err => {
+        console.log(err);
+        return res.json(string.jsonErr202);
+    });
+});
+
 apps.get('/check-device', (req, res) => {
     var user = {};
     const { device_mobi } = req.query;
-    db.execute(`SELECT * FROM user`).then(data => {
-        for (let arr of data[0]) {
-            if (arr['deviceMobi'] === device_mobi) {
-                user = {
-                    id: arr['id'],
-                    email: arr['email'],
-                    nameGame: arr['nameGame'],
-                    deviceMobi: arr['deviceMobi']
-                };
-            }
-            break;
+    db.execute(`SELECT deviceMobi FROM user WHERE deviceMobi = ?`, [device_mobi]).then(data => {
+        if (data[0].length != 0) {
+            user = {
+                deviceMobi: data[0][0]['deviceMobi']
+            };
         }
         res.statusCode = 200;
         return res.json({
@@ -109,8 +124,7 @@ apps.get('/check-device', (req, res) => {
 });
 
 apps.get('/list-account', (req, res) => {
-    db.execute('SELECT * FROM user').then(data => {
-        console.log(data[0]);
+    db.execute('SELECT email, nameGame, images, saveAccount FROM user').then(data => {
         res.statusCode = 200;
         return res.json({
             code: 0,
