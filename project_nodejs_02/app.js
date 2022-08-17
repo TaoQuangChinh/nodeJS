@@ -5,15 +5,16 @@ var db = require('./db/database');
 const express = require('express');
 const apps = express();
 const bodyParser = require('body-parser');
+const crypto = require("crypto");
 
 apps.use(bodyParser.urlencoded({ extended: true }));
 apps.use(bodyParser.json());
 
 apps.post("/login", (req, res) => {
-    const { email, pass, save_acc } = req.body;
+    const { email, pass, save_acc, device_mobi } = req.body;
     db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE email = ? AND pass = ?', [email, pass]).then(data => {
         if (data[0].length != 0) {
-            db.execute('UPDATE user SET saveAccount = ? WHERE email = ?', [save_acc, email]).then(() => {
+            db.execute('UPDATE user SET saveAccount = ?, deviceMobi = ? WHERE email = ?', [save_acc, device_mobi, email]).then(() => {
                 res.statusCode = 200;
                 return res.json({
                     code: 0,
@@ -38,10 +39,8 @@ apps.post("/login", (req, res) => {
 });
 
 apps.post('/register', (req, res) => {
-    const { id, email, nameGame, deviceMobi, images } = req.body;
+    const { id, email, nameGame, images } = req.body;
     const randomPass = randomstring.generate(7);
-    console.log(email);
-    console.log(nameGame);
     db.execute('SELECT email,nameGame FROM user WHERE email = ? OR nameGame = ?', [email, nameGame]).then(data => {
         if (data[0].length != 0) {
             if (data[0][0]['email'] === email) {
@@ -58,7 +57,7 @@ apps.post('/register', (req, res) => {
                 });
             }
         } else {
-            db.execute(`INSERT INTO user (id, email, pass, nameGame, deviceMobi, images) VALUES (?,?,?,?,?,?)`, [id, email, randomPass, nameGame, deviceMobi, images]).then(() => {
+            db.execute(`INSERT INTO user (id, email, pass, nameGame, images) VALUES (?,?,?,?,?)`, [id, email, randomPass, nameGame, images]).then(() => {
                 res.statusCode = 200;
                 return res.json({
                     code: 0,
@@ -69,7 +68,7 @@ apps.post('/register', (req, res) => {
                 console.log(err);
                 return res.json(string.jsonErr202);
             });
-            myEmail.sendMail(emailOption(`${email}`, `${nameGame}`, `${randomPass}`), (err, info) => {
+            myEmail.sendMail(emailOption(`${email}`, string.contentEmail(nameGame, randomPass), string.subject), (err, info) => {
                 if (err) {
                     console.log(err);
                     return res.json({
@@ -87,9 +86,9 @@ apps.post('/register', (req, res) => {
 });
 
 apps.post('/change-pass', (req, res) => {
-    const { email, pass_confirm } = req.body;
-    console.log(email,pass_confirm);
-    db.execute('UPDATE user SET pass = ? WHERE email = ?', [pass_confirm, email]).then(() => {
+    const { id, pass_confirm } = req.body;
+    db.execute('UPDATE user SET pass = ? WHERE id = ?', [pass_confirm, id]).then(() => {
+
         res.statusCode = 200;
         return res.json({
             code: 0,
@@ -102,20 +101,50 @@ apps.post('/change-pass', (req, res) => {
     });
 });
 
+apps.post('/send-code', (req, res) => {
+    const { email } = req.body;
+    crypto.randomInt(0, 100000, (err, random) => {
+        if (err) {
+            console.log(err);
+            return res.json({
+                code: 501,
+                message: "có một lỗi xảy ra trong quá trình gửi mail.",
+                payload: null
+            });
+        }
+        myEmail.sendMail(emailOption(`${email}`, string.mailSendCode(random), string.subject_code), (err, infor) => {
+            if (err) {
+                console.log(err);
+                return res.json({
+                    code: 501,
+                    message: "có một lỗi xảy ra trong quá trình gửi mail.",
+                    payload: null
+                });
+            }
+            return res.json({
+                code: 0,
+                message: 'gửi mã xác nhận thành công!',
+                payload: null
+            });
+        });
+    });
+});
+
 apps.get('/check-device', (req, res) => {
-    var user = {};
+    var dataUser = {};
     const { device_mobi } = req.query;
-    db.execute(`SELECT deviceMobi FROM user WHERE deviceMobi = ?`, [device_mobi]).then(data => {
-        if (data[0].length != 0) {
-            user = {
-                deviceMobi: data[0][0]['deviceMobi']
-            };
+    db.execute(`SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE deviceMobi = ?`, [device_mobi]).then(data => {
+        if (data[0].length == 1) {
+            dataUser = data[0][0];
         }
         res.statusCode = 200;
         return res.json({
             code: 0,
             message: "kiểm tra device thành công!",
-            payload: user
+            payload: {
+                total_device_login: data[0].length,
+                data_user: dataUser
+            }
         });
     }).catch(err => {
         console.log(err);
@@ -124,7 +153,7 @@ apps.get('/check-device', (req, res) => {
 });
 
 apps.get('/list-account', (req, res) => {
-    db.execute('SELECT email, nameGame, images, saveAccount FROM user').then(data => {
+    db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user').then(data => {
         res.statusCode = 200;
         return res.json({
             code: 0,
@@ -145,16 +174,16 @@ const myEmail = nodemailer.createTransport({
     }
 });
 
-const emailOption = (toMail, name, random) => {
+const emailOption = (toMail, content, subject) => {
     return {
         from: string.email,
         to: toMail,
-        subject: string.subject,
-        text: string.contentEmail(name, random)
+        subject: subject,
+        text: content
     };
 };
 
 //192.168.19.91 (CT)
 //192.168.0.104 (LN)
-apps.listen(8000, '192.168.0.104');
+apps.listen(8000, '192.168.19.91');
 module.exports = apps;
