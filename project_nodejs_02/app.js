@@ -85,9 +85,41 @@ apps.post('/register', (req, res) => {
     });
 });
 
-apps.post('/change-pass', (req, res) => {
-    const { id, pass_confirm } = req.body;
-    db.execute('UPDATE user SET pass = ? WHERE id = ?', [pass_confirm, id]).then(() => {
+apps.post('/send-code', (req, res) => {
+    const { email } = req.body;
+    crypto.randomInt(0, 100000, (err, random) => {
+        const randomNum = random.toString().padStart(6,'0');
+        if (err) {
+            console.log(err);
+            return res.json({
+                code: 501,
+                message: "có một lỗi xảy ra trong quá trình gửi mã.",
+                payload: null
+            });
+        }
+        myEmail.sendMail(emailOption(`${email}`, string.mailSendCode(randomNum), string.subject_code), (err, infor) => {
+            if (err) {
+                console.log(err);
+                return res.json({
+                    code: 501,
+                    message: "có một lỗi xảy ra trong quá trình gửi mã.",
+                    payload: null
+                });
+            }
+            return res.json({
+                code: 0,
+                message: 'gửi mã xác nhận thành công!',
+                payload: {
+                    verifi_code: randomNum
+                }
+            });
+        });
+    });
+});
+
+apps.put('/change-pass', (req, res) => {
+    const { email, pass_confirm } = req.body;
+    db.execute('UPDATE user SET pass = ? WHERE email = ?', [pass_confirm, email]).then(() => {
 
         res.statusCode = 200;
         return res.json({
@@ -101,32 +133,18 @@ apps.post('/change-pass', (req, res) => {
     });
 });
 
-apps.post('/send-code', (req, res) => {
-    const { email } = req.body;
-    crypto.randomInt(0, 100000, (err, random) => {
-        if (err) {
-            console.log(err);
-            return res.json({
-                code: 501,
-                message: "có một lỗi xảy ra trong quá trình gửi mail.",
-                payload: null
-            });
-        }
-        myEmail.sendMail(emailOption(`${email}`, string.mailSendCode(random), string.subject_code), (err, infor) => {
-            if (err) {
-                console.log(err);
-                return res.json({
-                    code: 501,
-                    message: "có một lỗi xảy ra trong quá trình gửi mail.",
-                    payload: null
-                });
-            }
-            return res.json({
-                code: 0,
-                message: 'gửi mã xác nhận thành công!',
-                payload: null
-            });
+apps.delete('/remove-account',(req,res)=>{
+    const {id} = req.body;
+    db.execute('UPDATE user SET deviceMobi = ? WHERE id = ?',[null, id]).then(()=>{
+        res.statusCode = 200;
+        return res.json({
+            code: 0,
+            message: "xoá tài khoản trên thiết bị thành công!",
+            payload: null
         });
+    }).catch(err => {
+        console.log(err);
+        return res.json(string.jsonErr202);
     });
 });
 
@@ -153,7 +171,9 @@ apps.get('/check-device', (req, res) => {
 });
 
 apps.get('/list-account', (req, res) => {
-    db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user').then(data => {
+    const {device} = req.query;
+
+    db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE deviceMobi = ?',[device]).then(data => {
         res.statusCode = 200;
         return res.json({
             code: 0,
