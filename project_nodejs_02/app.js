@@ -18,7 +18,7 @@ apps.post("/login", (req, res) => {
                 res.statusCode = 200;
                 return res.json({
                     code: 0,
-                    message: "đăng nhập thành công!",
+                    message: "Đăng nhập thành công!",
                     payload: data[0][0]
                 });
             }).catch(err => {
@@ -28,7 +28,7 @@ apps.post("/login", (req, res) => {
         } else {
             return res.json({
                 code: 400,
-                message: "tài khoản email hoặc mật khẩu sai.",
+                message: "Tài khoản email hoặc mật khẩu sai.",
                 payload: null
             });
         }
@@ -61,7 +61,7 @@ apps.post('/register', (req, res) => {
                 res.statusCode = 200;
                 return res.json({
                     code: 0,
-                    message: "tạo tài khoản thành công!",
+                    message: "Đăng ký tài khoản thành công!",
                     payload: null
                 });
             }).catch(err => {
@@ -73,7 +73,7 @@ apps.post('/register', (req, res) => {
                     console.log(err);
                     return res.json({
                         code: 501,
-                        message: "có một lỗi xảy ra trong quá trình gửi mail.",
+                        message: "Có một lỗi xảy ra trong quá trình gửi mail.",
                         payload: null
                     });
                 }
@@ -93,7 +93,7 @@ apps.post('/send-code', (req, res) => {
             console.log(err);
             return res.json({
                 code: 501,
-                message: "có một lỗi xảy ra trong quá trình gửi mã.",
+                message: "Có một lỗi xảy ra trong quá trình gửi mã.",
                 payload: null
             });
         }
@@ -102,13 +102,13 @@ apps.post('/send-code', (req, res) => {
                 console.log(err);
                 return res.json({
                     code: 501,
-                    message: "có một lỗi xảy ra trong quá trình gửi mã.",
+                    message: "Có một lỗi xảy ra trong quá trình gửi mã.",
                     payload: null
                 });
             }
             return res.json({
                 code: 0,
-                message: 'gửi mã xác nhận thành công!',
+                message: 'Chúng tôi đã gửi mã xác thực vào email của bạn!',
                 payload: {
                     verifi_code: randomNum
                 }
@@ -124,7 +124,7 @@ apps.put('/change-pass', (req, res) => {
         res.statusCode = 200;
         return res.json({
             code: 0,
-            message: "cập nhập thông tin thành công!",
+            message: "Cập nhập thông tin thành công!",
             payload: null
         });
     }).catch(err => {
@@ -139,7 +139,7 @@ apps.delete('/remove-account',(req,res)=>{
         res.statusCode = 200;
         return res.json({
             code: 0,
-            message: "xoá tài khoản trên thiết bị thành công!",
+            message: "Xoá tài khoản trên thiết bị thành công!",
             payload: null
         });
     }).catch(err => {
@@ -158,7 +158,7 @@ apps.get('/check-device', (req, res) => {
         res.statusCode = 200;
         return res.json({
             code: 0,
-            message: "kiểm tra device thành công!",
+            message: "Kiểm tra device thành công!",
             payload: {
                 total_device_login: data[0].length,
                 data_user: dataUser
@@ -177,7 +177,7 @@ apps.get('/list-account', (req, res) => {
         res.statusCode = 200;
         return res.json({
             code: 0,
-            message: "lấy danh sách tài khoản thành công!",
+            message: "Lấy danh sách tài khoản thành công!",
             payload: data[0]
         });
     }).catch(err => {
