@@ -12,18 +12,17 @@ apps.use(bodyParser.json());
 
 apps.post("/login", (req, res) => {
     const { email, pass, save_acc, device_mobi } = req.body;
-    db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE email = ? AND pass = ?', [email, pass]).then(data => {
-        if (data[0].length != 0) {
+    db.execute('SELECT email FROM user WHERE email = ? AND pass = ?', [email, pass]).then(check => {
+        if (check[0].length != 0) {
             db.execute('UPDATE user SET saveAccount = ?, deviceMobi = ? WHERE email = ?', [save_acc, device_mobi, email]).then(() => {
-                res.statusCode = 200;
-                return res.json({
-                    code: 0,
-                    message: "Đăng nhập thành công!",
-                    payload: data[0][0]
+                db.execute('SELECT id, id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE email = ?', [email]).then(data => {
+                    res.statusCode = 200;
+                    return res.json({
+                        code: 0,
+                        message: "Đăng nhập thành công!",
+                        payload: data[0][0]
+                    });
                 });
-            }).catch(err => {
-                console.log(err);
-                return res.json(string.jsonErr202);
             });
         } else {
             return res.json({
@@ -88,7 +87,7 @@ apps.post('/register', (req, res) => {
 apps.post('/send-code', (req, res) => {
     const { email } = req.body;
     crypto.randomInt(0, 100000, (err, random) => {
-        const randomNum = random.toString().padStart(6,'0');
+        const randomNum = random.toString().padStart(6, '0');
         if (err) {
             console.log(err);
             return res.json({
@@ -133,9 +132,9 @@ apps.put('/change-pass', (req, res) => {
     });
 });
 
-apps.delete('/remove-account',(req,res)=>{
-    const {id} = req.body;
-    db.execute('UPDATE user SET deviceMobi = ? WHERE id = ?',[null, id]).then(()=>{
+apps.delete('/remove-account', (req, res) => {
+    const { id } = req.body;
+    db.execute('UPDATE user SET deviceMobi = ? WHERE id = ?', [null, id]).then(() => {
         res.statusCode = 200;
         return res.json({
             code: 0,
@@ -171,9 +170,9 @@ apps.get('/check-device', (req, res) => {
 });
 
 apps.get('/list-account', (req, res) => {
-    const {device} = req.query;
+    const { device } = req.query;
 
-    db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE deviceMobi = ?',[device]).then(data => {
+    db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE deviceMobi = ?', [device]).then(data => {
         res.statusCode = 200;
         return res.json({
             code: 0,
