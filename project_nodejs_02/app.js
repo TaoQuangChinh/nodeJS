@@ -38,9 +38,9 @@ apps.post("/login", (req, res) => {
 });
 
 apps.post('/register', (req, res) => {
-    const { id, email, nameGame, images } = req.body;
+    const { id, email, images } = req.body;
     const randomPass = randomstring.generate(7);
-    db.execute('SELECT email,nameGame FROM user WHERE email = ? OR nameGame = ?', [email, nameGame]).then(data => {
+    db.execute('SELECT email FROM user WHERE email = ?', [email]).then(data => {
         if (data[0].length != 0) {
             if (data[0][0]['email'] === email) {
                 return res.json({
@@ -48,34 +48,27 @@ apps.post('/register', (req, res) => {
                     message: 'Tài khoản email đã được đăng ký.',
                     payload: null
                 });
-            } else if (data[0][0]['nameGame'] === nameGame) {
-                return res.json({
-                    code: 501,
-                    message: 'Nick name đã tồn tại, vui lòng chọn tên khác.',
-                    payload: null
-                });
             }
         } else {
-            db.execute(`INSERT INTO user (id, email, pass, nameGame, images) VALUES (?,?,?,?,?)`, [id, email, randomPass, nameGame, images]).then(() => {
+            db.execute(`UPDATE user SET email = ?, pass = ?, images = ? WHERE id = ?`, [email, randomPass, images, id]).then(() => {
                 res.statusCode = 200;
                 return res.json({
                     code: 0,
                     message: "Đăng ký tài khoản thành công!",
                     payload: null
                 });
-            }).catch(err => {
-                console.log(err);
-                return res.json(string.jsonErr202);
-            });
-            myEmail.sendMail(emailOption(`${email}`, string.contentEmail(nameGame, randomPass), string.subject), (err, info) => {
-                if (err) {
-                    console.log(err);
-                    return res.json({
-                        code: 501,
-                        message: "Có một lỗi xảy ra trong quá trình gửi mail.",
-                        payload: null
-                    });
-                }
+            })
+            db.execute('SELECT user_name,pass FROM user WHERE id = ?',[id]).then(data=>{
+                myEmail.sendMail(emailOption(`${email}`, string.contentEmail(data[0][0]['user_name'], data[0][0]['pass']), string.subject), (err, info) => {
+                    if (err) {
+                        console.log(err);
+                        return res.json({
+                            code: 501,
+                            message: "Có một lỗi xảy ra trong quá trình gửi mail.",
+                            payload: null
+                        });
+                    }
+                });
             });
         }
     }).catch(err => {
@@ -148,11 +141,13 @@ apps.delete('/remove-account', (req, res) => {
 });
 
 apps.get('/check-device', (req, res) => {
-    var dataUser = {};
+    var dataUser = null;
     const { device_mobi } = req.query;
-    db.execute(`SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE deviceMobi = ?`, [device_mobi]).then(data => {
-        if (data[0].length == 1) {
-            dataUser = data[0][0];
+    db.execute(`SELECT id, email, user_name, device_mobi, images, save_account FROM user WHERE device_mobi = ?`, [device_mobi]).then(data => {
+        if (data[0].length === 1) {
+            if(data[0][0]['save_account'] === 1){
+                dataUser = data[0][0];
+            }
         }
         res.statusCode = 200;
         return res.json({
