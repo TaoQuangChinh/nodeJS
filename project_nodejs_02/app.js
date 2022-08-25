@@ -14,8 +14,8 @@ apps.post("/login", (req, res) => {
     const { email, pass, save_acc, device_mobi } = req.body;
     db.execute('SELECT email FROM user WHERE email = ? AND pass = ?', [email, pass]).then(check => {
         if (check[0].length != 0) {
-            db.execute('UPDATE user SET saveAccount = ?, deviceMobi = ? WHERE email = ?', [save_acc, device_mobi, email]).then(() => {
-                db.execute('SELECT id, id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE email = ?', [email]).then(data => {
+            db.execute('UPDATE user SET save_account = ?, device_mobi = ? WHERE email = ?', [save_acc, device_mobi, email]).then(() => {
+                db.execute('SELECT id, email, user_name, device_mobi, images, save_account FROM user WHERE email = ?', [email]).then(data => {
                     res.statusCode = 200;
                     return res.json({
                         code: 0,
@@ -58,7 +58,7 @@ apps.post('/register', (req, res) => {
                     payload: null
                 });
             })
-            db.execute('SELECT user_name,pass FROM user WHERE id = ?',[id]).then(data=>{
+            db.execute('SELECT user_name,pass FROM user WHERE id = ?', [id]).then(data => {
                 myEmail.sendMail(emailOption(`${email}`, string.contentEmail(data[0][0]['user_name'], data[0][0]['pass']), string.subject), (err, info) => {
                     if (err) {
                         console.log(err);
@@ -69,6 +69,29 @@ apps.post('/register', (req, res) => {
                         });
                     }
                 });
+            });
+        }
+    }).catch(err => {
+        console.log(err);
+        return res.json(string.jsonErr202);
+    });
+});
+
+apps.post('/check-user', (req, res) => {
+    const { id } = req.body;
+    db.execute('SELECT user_name FROM user WHERE id = ?', [id]).then(data => {
+        if(data[0].length != 0){
+            res.statusCode = 200;
+            res.json({
+                code: 0,
+                message: 'Kiểm tra thông tin thành công!',
+                payload: data[0][0]['user_name']
+            });
+        }else{
+            return res.json({
+                code: 400,
+                message: 'Người dùng không tồn tại.',
+                payload: null
             });
         }
     }).catch(err => {
@@ -127,7 +150,7 @@ apps.put('/change-pass', (req, res) => {
 
 apps.delete('/remove-account', (req, res) => {
     const { id } = req.body;
-    db.execute('UPDATE user SET deviceMobi = ? WHERE id = ?', [null, id]).then(() => {
+    db.execute('UPDATE user SET device_mobi = ? WHERE id = ?', [null, id]).then(() => {
         res.statusCode = 200;
         return res.json({
             code: 0,
@@ -145,7 +168,7 @@ apps.get('/check-device', (req, res) => {
     const { device_mobi } = req.query;
     db.execute(`SELECT id, email, user_name, device_mobi, images, save_account FROM user WHERE device_mobi = ?`, [device_mobi]).then(data => {
         if (data[0].length === 1) {
-            if(data[0][0]['save_account'] === 1){
+            if (data[0][0]['save_account'] === 1) {
                 dataUser = data[0][0];
             }
         }
@@ -167,7 +190,7 @@ apps.get('/check-device', (req, res) => {
 apps.get('/list-account', (req, res) => {
     const { device } = req.query;
 
-    db.execute('SELECT id, email, nameGame, deviceMobi, images, saveAccount FROM user WHERE deviceMobi = ?', [device]).then(data => {
+    db.execute('SELECT id, email, user_name, device_mobi, images, save_account FROM user WHERE device_mobi = ?', [device]).then(data => {
         res.statusCode = 200;
         return res.json({
             code: 0,
